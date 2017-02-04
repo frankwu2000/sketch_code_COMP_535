@@ -18,10 +18,10 @@ public class Server_socket extends Thread {
 		while(true){
 			try{
 				System.out.println(server_socket.toString());
+				
+				
 				//System.out.println("Waiting for client on port " + server_socket.getLocalPort() + "...");
 				Socket client_socket = server_socket.accept();
-				
-				
 				
 				//System.out.println("Just connected to " + client_socket.getRemoteSocketAddress());
 				ObjectInputStream in = new ObjectInputStream(client_socket.getInputStream());

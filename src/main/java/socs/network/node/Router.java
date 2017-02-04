@@ -85,7 +85,7 @@ public class Router {
    */
   private void processStart() {
 	  //client socket
-	  for(int i=0;i<1;i++){
+	  for(int i=0;i<ports.length;i++){
 		  if(ports[i]!=null){
 			  try{
 				 // System.out.println("Connecting to " + ports[i].router2.processIPAddress  + " on port " + ports[i].router2.processPortNumber);
@@ -134,14 +134,13 @@ public class Router {
 					
 			      out.writeObject(packet);
 			      
-			       
 				  target_socket.close();
 				  
 			  }catch (IOException e) {
 				  e.printStackTrace();
 			  }
 			  
-			  break;
+			  
 		  }
 		 
 		  
