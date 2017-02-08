@@ -48,6 +48,7 @@ public class Server_socket extends Thread {
 						break;
 						
 					}
+					
 				}
 				System.out.println("received HELLO from " + in_packet.srcIP + ";");
 				router.ports[linkPort].router2.status = RouterStatus.INIT;
@@ -75,8 +76,8 @@ public class Server_socket extends Thread {
 					router.ports[linkPort].router2.status = RouterStatus.TWO_WAY;
 					System.out.println("set " + in_packet.srcIP + " state to TWO_WAY");
 				}
-				
-				router.ports[linkPort] = null;
+				//attach the client router to this router
+				//router.ports[linkPort] = null;
 				
 				client_socket.close();
 			}
