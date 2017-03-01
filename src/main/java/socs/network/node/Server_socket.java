@@ -96,6 +96,9 @@ public class Server_socket extends Thread {
 								router.lsd._store.put(lsaUpdate.get(i).linkStateID, lsaUpdate.get(i));
 							}
 							//else skip this lsa
+						}else{
+							//update lsa to the lsdb
+							router.lsd._store.put(lsaUpdate.get(i).linkStateID, lsaUpdate.get(i));
 						}
 					}
 					
