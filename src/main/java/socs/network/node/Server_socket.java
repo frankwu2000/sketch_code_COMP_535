@@ -1,7 +1,9 @@
 package socs.network.node;
 
 import java.net.*;
+import java.util.Vector;
 
+import socs.network.message.LSA;
 import socs.network.message.SOSPFPacket;
 
 import java.io.*;
@@ -78,6 +80,30 @@ public class Server_socket extends Thread {
 				}
 				//attach the client router to this router
 				//router.ports[linkPort] = null;
+				
+				//receive LSA packet
+				if (in_packet.sospfType == 1){
+					//receive broadcast of LSAupdate
+					Vector<LSA> lsaUpdate = in_packet.lsaArray;
+					
+					//save the broadcast to linkstate database
+					for(int i = 0 ;i<lsaUpdate.size();i++){
+						if(router.lsd._store.containsKey(lsaUpdate.get(i).linkStateID) ){
+							//if the incoming lsa is already stored in the linkstate database
+							//compare their sequence number
+							if(router.lsd._store.get(lsaUpdate.get(i).linkStateID).lsaSeqNumber < lsaUpdate.get(i).lsaSeqNumber){
+								//update lsa to the lsdb
+								router.lsd._store.put(lsaUpdate.get(i).linkStateID, lsaUpdate.get(i));
+							}
+							//else skip this lsa
+						}
+					}
+					
+					//broadcast current linkstate database to all neighbors except the sender of the packet
+					
+				}
+				
+				
 				
 				client_socket.close();
 			}
