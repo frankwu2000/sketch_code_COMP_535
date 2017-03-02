@@ -130,7 +130,7 @@ public class Router {
 	  for(int i=0;i<ports.length;i++){
 		  //check if port is already two_way
 		  if(ports[i]!=null && ports[i].router2.status == RouterStatus.TWO_WAY){
-			  System.out.println("this port is TWO_WAY already!");
+			  System.out.println("port "+ ports[i].router2.simulatedIPAddress +" is TWO_WAY already!");
 		  }
 		  //if port is already two_way, ignore it
 		  if(ports[i]!=null && ports[i].router2.status != RouterStatus.TWO_WAY){

@@ -80,6 +80,7 @@ public class Server_socket extends Thread {
 				}
 				//attach the client router to this router
 				//router.ports[linkPort] = null;
+				client_socket.close();
 				
 				//receive LSA packet
 				if (in_packet.sospfType == 1){
@@ -102,13 +103,39 @@ public class Server_socket extends Thread {
 						}
 					}
 					
+					//save the current linkstate to the vector new_lsaUpdate
+					Vector<LSA> new_lsaUpdate = new Vector<LSA>();
+				    for(int i = 0; i< router.ports.length ; i++){
+				    	  if(router.ports[i]!=null){
+				    		  new_lsaUpdate.add(router.lsd._store.get(router.ports[i].router2.simulatedIPAddress));
+				    	  }
+				    }
+				      
 					//broadcast current linkstate database to all neighbors except the sender of the packet
-					
+					for(int i=0;i<router.ports.length;i++){
+						if(router.ports[i]!= null && router.ports[i].router2.simulatedIPAddress!=in_packet.srcIP){
+							//create a new socket for each neighbor
+							Socket target_socket = new Socket(router.ports[i].router2.processIPAddress,router.ports[i].router2.processPortNumber);
+							OutputStream outToServer = target_socket.getOutputStream();
+						    ObjectOutputStream new_out = new ObjectOutputStream(outToServer);
+						    //write the out packet
+						    SOSPFPacket LSA_packet = new SOSPFPacket();
+						    LSA_packet.srcProcessIP = router.rd.processIPAddress;
+						    LSA_packet.srcProcessPort = router.rd.processPortNumber;
+						    LSA_packet.srcIP = router.rd.simulatedIPAddress;
+						    LSA_packet.dstIP = router.ports[i].router2.simulatedIPAddress;
+						    LSA_packet.sospfType = 1 ;
+						    LSA_packet.routerID = router.rd.simulatedIPAddress;
+						    LSA_packet.lsaArray = new Vector<LSA>(new_lsaUpdate);
+						      
+						    new_out.writeObject( LSA_packet);
+						    new_out.flush();
+						      
+						    target_socket.close();
+						}
+					}
 				}
 				
-				
-				
-				client_socket.close();
 			}
 			catch(IOException e) {
 	            e.printStackTrace();
