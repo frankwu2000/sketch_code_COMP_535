@@ -47,8 +47,6 @@ public class Server_socket extends Thread {
 							source_rd.processPortNumber = in_packet.srcProcessPort;
 							source_rd.simulatedIPAddress = in_packet.srcIP;
 							
-							System.out.printf("processIP: %s, processPort: %d, simulatedIP: %s\n", source_rd.processIPAddress,source_rd.processPortNumber,source_rd.simulatedIPAddress);
-							
 							router.ports[i] = new Link(router.rd, source_rd); 
 							linkPort = i;
 							break;
@@ -82,10 +80,7 @@ public class Server_socket extends Thread {
 				else if (in_packet.sospfType == 1)
 				{
 					//receive broadcast of LSAupdate
-					Vector<LSA> lsaUpdate = new Vector<LSA>(in_packet.lsaArray);
-					
-					System.out.println(in_packet.lsaArray.get(0));
-					
+					Vector<LSA> lsaUpdate = new Vector<LSA>(in_packet.lsaArray);					
 					//save the broadcast to linkstate database
 					for(int i = 0 ;i<lsaUpdate.size();i++){
 						if(router.lsd._store.containsKey(lsaUpdate.get(i).links.getLast().linkID)){
@@ -109,11 +104,11 @@ public class Server_socket extends Thread {
 				    		  new_lsaUpdate.add(router.lsd._store.get(router.ports[i].router2.simulatedIPAddress));
 				    	  }
 				    }
-				    /*
+				    
 					//broadcast current linkstate database to all neighbors except the sender of the packet
 					for(int i=0;i<router.ports.length;i++){
-						if(router.ports[i]!= null && router.ports[i].router2.simulatedIPAddress!=in_packet.srcIP){
-							System.out.println(router.ports[i].router2.processIPAddress);
+						if(router.ports[i]!= null && !(router.ports[i].router2.simulatedIPAddress.equals(in_packet.srcIP))){
+							System.out.println("Port IP"+router.ports[i].router2.simulatedIPAddress+"SourceIP: "+in_packet.srcIP);
 							//create a new socket for each neighbor
 							Socket target_socket = new Socket(router.ports[i].router2.processIPAddress,router.ports[i].router2.processPortNumber);
 							OutputStream outToServer = target_socket.getOutputStream();
@@ -138,7 +133,7 @@ public class Server_socket extends Thread {
 						      
 						    target_socket.close();
 						}
-					}*/
+					}
 				}
 				client_socket.close();
 			}
