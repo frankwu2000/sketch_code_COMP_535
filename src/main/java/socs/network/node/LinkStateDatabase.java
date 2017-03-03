@@ -3,7 +3,10 @@ package socs.network.node;
 import socs.network.message.LSA;
 import socs.network.message.LinkDescription;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 public class LinkStateDatabase {
 
@@ -22,7 +25,34 @@ public class LinkStateDatabase {
    * output the shortest path from this router to the destination with the given IP address
    */
   String getShortestPath(String destinationIP) {
-    //TODO: fill the implementation here
+    String min_next_node = new String();
+    int min_weight=Integer.MAX_VALUE;
+	HashMap<String, LSA> tentative_list = new HashMap<String, LSA>();
+	HashMap<String, LSA> confirmed_list = new HashMap<String, LSA>();
+	
+	//add itself to confirmed_list at first step
+	confirmed_list.put(rd.simulatedIPAddress,_store.get(rd.simulatedIPAddress));
+	//add neighbors to tentative list
+	//loop through _stores
+	for( Map.Entry<String, LSA> entry: _store.entrySet()){
+		//if it is itself, skip
+		if(entry.getKey() == rd.simulatedIPAddress){
+			continue;
+		}
+		tentative_list.put(entry.getKey(), entry.getValue());
+	}
+	
+	//choose minimum weight from tentative list
+	for( Map.Entry<String, LSA> entry: tentative_list.entrySet()){
+		if(entry.getValue().links.peekLast().tosMetrics < min_weight){
+			min_weight = entry.getValue().links.peekLast().tosMetrics;
+			min_next_node = entry.getKey();
+		}
+	}
+	//add the minimum weight node to confirmed list
+	confirmed_list.put(min_next_node,_store.get(min_next_node));
+	
+	  
     return null;
   }
 

@@ -32,6 +32,7 @@ public class Server_socket extends Thread {
 				SOSPFPacket in_packet = new SOSPFPacket();
 				try {
 					in_packet = (SOSPFPacket)in.readObject();
+			
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 				}
@@ -78,28 +79,32 @@ public class Server_socket extends Thread {
 					router.ports[linkPort].router2.status = RouterStatus.TWO_WAY;
 					System.out.println("set " + in_packet.srcIP + " state to TWO_WAY");
 				}
-				//attach the client router to this router
-				//router.ports[linkPort] = null;
-				client_socket.close();
+				
+				try {
+					in_packet = (SOSPFPacket) in.readObject();
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				}
 				
 				//receive LSA packet
 				if (in_packet.sospfType == 1){
+					System.out.println("debug");
 					//receive broadcast of LSAupdate
 					Vector<LSA> lsaUpdate = in_packet.lsaArray;
 					
 					//save the broadcast to linkstate database
 					for(int i = 0 ;i<lsaUpdate.size();i++){
-						if(router.lsd._store.containsKey(lsaUpdate.get(i).linkStateID) ){
+						if(router.lsd._store.containsKey(lsaUpdate.get(i).links.getLast().linkID) ){
 							//if the incoming lsa is already stored in the linkstate database
 							//compare their sequence number
-							if(router.lsd._store.get(lsaUpdate.get(i).linkStateID).lsaSeqNumber < lsaUpdate.get(i).lsaSeqNumber){
+							if(router.lsd._store.get(lsaUpdate.get(i).links.getLast().linkID).lsaSeqNumber < lsaUpdate.get(i).lsaSeqNumber){
 								//update lsa to the lsdb
-								router.lsd._store.put(lsaUpdate.get(i).linkStateID, lsaUpdate.get(i));
+								router.lsd._store.put(lsaUpdate.get(i).links.getLast().linkID, lsaUpdate.get(i));
 							}
 							//else skip this lsa
 						}else{
 							//update lsa to the lsdb
-							router.lsd._store.put(lsaUpdate.get(i).linkStateID, lsaUpdate.get(i));
+							router.lsd._store.put(lsaUpdate.get(i).links.getLast().linkID, lsaUpdate.get(i));
 						}
 					}
 					
@@ -126,6 +131,10 @@ public class Server_socket extends Thread {
 						    LSA_packet.dstIP = router.ports[i].router2.simulatedIPAddress;
 						    LSA_packet.sospfType = 1 ;
 						    LSA_packet.routerID = router.rd.simulatedIPAddress;
+						    //increment sequence number
+						    for(int j = 0 ; j<new_lsaUpdate.size();j++){
+						    	new_lsaUpdate.get(j).lsaSeqNumber++;
+						    }
 						    LSA_packet.lsaArray = new Vector<LSA>(new_lsaUpdate);
 						      
 						    new_out.writeObject( LSA_packet);
@@ -135,6 +144,7 @@ public class Server_socket extends Thread {
 						}
 					}
 				}
+				client_socket.close();
 				
 			}
 			catch(IOException e) {
