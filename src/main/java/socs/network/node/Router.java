@@ -22,6 +22,7 @@ public class Router {
 
   public Router(Configuration config) {
     rd.simulatedIPAddress = config.getString("socs.network.router.ip");
+    rd.processIPAddress = "0.0.0.0";
     lsd = new LinkStateDatabase(rd);
     
     
@@ -30,6 +31,7 @@ public class Router {
     port_str = port_str.substring(6, port_str.length()-1);
     int port = Integer.parseInt(port_str);
     port += 1024;
+    rd.processPortNumber = (short) port;
     //create server socket 
    try {
 	   Thread t1 = new Server_socket( port , this );
@@ -122,7 +124,7 @@ public class Router {
 	  Vector<LSA> lsaUpdate = new Vector<LSA>();
       for(int i = 0; i< ports.length ; i++){
     	  if(ports[i]!=null){
-    		  lsaUpdate.add(lsd._store.get(ports[i].router2.simulatedIPAddress));
+    		  lsaUpdate.add(lsd._store.get(ports[i].router1.simulatedIPAddress));
     	  }
       }
 	  
