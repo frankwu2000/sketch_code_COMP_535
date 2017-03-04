@@ -180,9 +180,15 @@ public class Router {
 				      out.flush();
 				      out.writeObject(packet);
 				     // in.close();
+
 				     //out.close();
 				      //close the socket 
 				      //target_socket.close();
+
+				     // out.close();
+				      //close the socket 
+				     // target_socket.close();
+
 				     
 			      }
 			      
@@ -212,7 +218,7 @@ public class Router {
 			      
 			      out.flush();
 			      out.writeObject(packet);
-			       
+
 			      in.close();
 			      out.close();
 			      //close the socket 
