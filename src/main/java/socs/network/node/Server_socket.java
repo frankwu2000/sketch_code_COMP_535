@@ -113,8 +113,13 @@ public class Server_socket extends Thread {
 				    {
 						new_lsaUpdate.add(entry.getValue());
 				    }
+
 				    client_socket.close();
 					//broadcast current linkstate database to all neighbors except the sender of the packet
+
+				    
+				  //broadcast current linkstate database to all neighbors except the sender of the packet
+
 					for(int i=0;i<router.ports.length;i++){
 						if(router.ports[i]!= null && !(router.ports[i].router2.simulatedIPAddress.equals(in_packet.srcIP))){
 							//create a new socket for each neighbor
@@ -143,7 +148,9 @@ public class Server_socket extends Thread {
 						}
 					}
 				}
+
 				//client_socket.close();
+
 			}
 			catch(IOException e) {
 	            e.printStackTrace();
