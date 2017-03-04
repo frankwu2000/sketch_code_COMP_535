@@ -2,6 +2,7 @@ package socs.network.node;
 import java.net.*;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Vector;
 import java.io.*;
 
@@ -91,20 +92,16 @@ public class Router {
 				  r2.processPortNumber = processPort;
 				  r2.simulatedIPAddress = simulatedIP;
 				  ports[i] = new Link(this.rd, r2); 
-				 
-			//add weight to TOSmetrics
+			
 				  
-				  LSA lsa = new LSA();
-				  lsa.linkStateID = rd.simulatedIPAddress;
-				  //sequence set to 0 when initialize
-				  lsa.lsaSeqNumber = 0;
+				  LSA lsa = lsd._store.get(rd.simulatedIPAddress);
 				  LinkDescription ld = new LinkDescription();
 				  ld.linkID = simulatedIP;
 				  ld.portNum = processPort;
 				  ld.tosMetrics = weight;
 				  lsa.links.add(ld);
 				  //add the new LSA to the hash map
-				  lsd._store.put(ld.linkID, lsa);
+				  lsd._store.put(rd.simulatedIPAddress, lsa);
 				  
 				  break;
 			  }
@@ -122,10 +119,9 @@ public class Router {
 	  //get linkstatedatabase hashmap (neighbor information)
 	  //loop through the link state database hashmap
 	  Vector<LSA> lsaUpdate = new Vector<LSA>();
-      for(int i = 0; i< ports.length ; i++){
-    	  if(ports[i]!=null){
-    		  lsaUpdate.add(lsd._store.get(ports[i].router1.simulatedIPAddress));
-    	  }
+      for (Map.Entry<String, LSA> entry : lsd._store.entrySet())
+      {
+    	  lsaUpdate.add(entry.getValue());
       }
 	  
 	  //client socket
@@ -208,7 +204,7 @@ public class Router {
 			      for(int j = 0 ; j<lsaUpdate.size();j++){
 			    	  if( lsaUpdate.get(j)!=null){
 			    		  lsaUpdate.get(j).lsaSeqNumber++;
-			    	  }		    	  
+			    	  }
 			      }
 			      packet.lsaArray = new Vector<LSA>(lsaUpdate);
 			      

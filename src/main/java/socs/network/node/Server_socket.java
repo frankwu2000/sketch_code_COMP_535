@@ -108,7 +108,6 @@ public class Server_socket extends Thread {
 					//broadcast current linkstate database to all neighbors except the sender of the packet
 					for(int i=0;i<router.ports.length;i++){
 						if(router.ports[i]!= null && !(router.ports[i].router2.simulatedIPAddress.equals(in_packet.srcIP))){
-							System.out.println("Port IP"+router.ports[i].router2.simulatedIPAddress+"SourceIP: "+in_packet.srcIP);
 							//create a new socket for each neighbor
 							Socket target_socket = new Socket(router.ports[i].router2.processIPAddress,router.ports[i].router2.processPortNumber);
 							OutputStream outToServer = target_socket.getOutputStream();
