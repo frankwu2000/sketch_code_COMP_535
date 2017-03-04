@@ -1,6 +1,7 @@
 package socs.network.node;
 
 import java.net.*;
+import java.util.Map;
 import java.util.Vector;
 
 import socs.network.message.LSA;
@@ -20,8 +21,6 @@ public class Server_socket extends Thread {
 		while(true){
 			try{
 				System.out.println(server_socket.toString());
-				
-				
 				//System.out.println("Waiting for client on port " + server_socket.getLocalPort() + "...");
 				Socket client_socket = server_socket.accept();
 				
@@ -29,6 +28,7 @@ public class Server_socket extends Thread {
 				ObjectInputStream in = new ObjectInputStream(client_socket.getInputStream());
 				ObjectOutputStream out = new ObjectOutputStream(client_socket.getOutputStream());
 				
+				//This reads any incoming packet
 				SOSPFPacket in_packet = new SOSPFPacket();
 				try {
 					in_packet = (SOSPFPacket)in.readObject();
@@ -76,35 +76,44 @@ public class Server_socket extends Thread {
 					System.out.println("received HELLO from " + in_packet.srcIP + ";");
 					router.ports[linkPort].router2.status = RouterStatus.TWO_WAY;
 					System.out.println("set " + in_packet.srcIP + " state to TWO_WAY");
+					
+					
+					
+					// This is to read the update packet immediately after the second HELLO
+					try {
+						in_packet = (SOSPFPacket)in.readObject();
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+					}
 				}
-				else if (in_packet.sospfType == 1)
+				
+				if (in_packet.sospfType == 1)
 				{
 					//receive broadcast of LSAupdate
-					Vector<LSA> lsaUpdate = new Vector<LSA>(in_packet.lsaArray);					
+					Vector<LSA> lsaUpdate = new Vector<LSA>(in_packet.lsaArray);
 					//save the broadcast to linkstate database
 					for(int i = 0 ;i<lsaUpdate.size();i++){
-						if(router.lsd._store.containsKey(lsaUpdate.get(i).links.getLast().linkID)){
+						if(router.lsd._store.containsKey(lsaUpdate.get(i).linkStateID)){
 							//if the incoming lsa is already stored in the linkstate database
 							//compare their sequence number
-							if(router.lsd._store.get(lsaUpdate.get(i).links.getLast().linkID).lsaSeqNumber < lsaUpdate.get(i).lsaSeqNumber){
+							if(router.lsd._store.get(lsaUpdate.get(i).linkStateID).lsaSeqNumber <= lsaUpdate.get(i).lsaSeqNumber){
 								//update lsa to the lsdb
-								router.lsd._store.put(lsaUpdate.get(i).links.getLast().linkID, lsaUpdate.get(i));
+								router.lsd._store.put(lsaUpdate.get(i).linkStateID, lsaUpdate.get(i));
 							}
 							//else skip this lsa
 						}else{
 							//update lsa to the lsdb
-							router.lsd._store.put(lsaUpdate.get(i).links.getLast().linkID, lsaUpdate.get(i));
+							router.lsd._store.put(lsaUpdate.get(i).linkStateID, lsaUpdate.get(i));
 						}
 					}
 					
 					//save the current linkstate to the vector new_lsaUpdate
 					Vector<LSA> new_lsaUpdate = new Vector<LSA>();
-				    for(int i = 0; i< router.ports.length ; i++){
-				    	  if(router.ports[i]!=null){
-				    		  new_lsaUpdate.add(router.lsd._store.get(router.ports[i].router2.simulatedIPAddress));
-				    	  }
+					for (Map.Entry<String, LSA> entry : router.lsd._store.entrySet())
+				    {
+						new_lsaUpdate.add(entry.getValue());
 				    }
-				    
+				    client_socket.close();
 					//broadcast current linkstate database to all neighbors except the sender of the packet
 					for(int i=0;i<router.ports.length;i++){
 						if(router.ports[i]!= null && !(router.ports[i].router2.simulatedIPAddress.equals(in_packet.srcIP))){
@@ -134,7 +143,7 @@ public class Server_socket extends Thread {
 						}
 					}
 				}
-				client_socket.close();
+				//client_socket.close();
 			}
 			catch(IOException e) {
 	            e.printStackTrace();
