@@ -2,6 +2,7 @@ package socs.network.node;
 import java.net.*;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Vector;
 import java.io.*;
 
@@ -22,6 +23,7 @@ public class Router {
 
   public Router(Configuration config) {
     rd.simulatedIPAddress = config.getString("socs.network.router.ip");
+    rd.processIPAddress = "0.0.0.0";
     lsd = new LinkStateDatabase(rd);
     
     
@@ -30,6 +32,7 @@ public class Router {
     port_str = port_str.substring(6, port_str.length()-1);
     int port = Integer.parseInt(port_str);
     port += 1024;
+    rd.processPortNumber = (short) port;
     //create server socket 
    try {
 	   Thread t1 = new Server_socket( port , this );
@@ -89,20 +92,16 @@ public class Router {
 				  r2.processPortNumber = processPort;
 				  r2.simulatedIPAddress = simulatedIP;
 				  ports[i] = new Link(this.rd, r2); 
-				 
-			//add weight to TOSmetrics
+			
 				  
-				  LSA lsa = new LSA();
-				  lsa.linkStateID = rd.simulatedIPAddress;
-				  //sequence set to 0 when initialize
-				  lsa.lsaSeqNumber = 0;
+				  LSA lsa = lsd._store.get(rd.simulatedIPAddress);
 				  LinkDescription ld = new LinkDescription();
 				  ld.linkID = simulatedIP;
 				  ld.portNum = processPort;
 				  ld.tosMetrics = weight;
 				  lsa.links.add(ld);
 				  //add the new LSA to the hash map
-				  lsd._store.put(lsa.linkStateID, lsa);
+				  lsd._store.put(rd.simulatedIPAddress, lsa);
 				  
 				  break;
 			  }
@@ -120,10 +119,9 @@ public class Router {
 	  //get linkstatedatabase hashmap (neighbor information)
 	  //loop through the link state database hashmap
 	  Vector<LSA> lsaUpdate = new Vector<LSA>();
-      for(int i = 0; i< ports.length ; i++){
-    	  if(ports[i]!=null){
-    		  lsaUpdate.add(lsd._store.get(ports[i].router2.simulatedIPAddress));
-    	  }
+      for (Map.Entry<String, LSA> entry : lsd._store.entrySet())
+      {
+    	  lsaUpdate.add(entry.getValue());
       }
 	  
 	  //client socket
@@ -133,80 +131,87 @@ public class Router {
 			  System.out.println("port "+ ports[i].router2.simulatedIPAddress +" is TWO_WAY already!");
 		  }
 		  //if port is already two_way, ignore it
-		  if(ports[i]!=null && ports[i].router2.status != RouterStatus.TWO_WAY){
+		  if(ports[i]!=null){
 			  try{
-				  Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
+				  //if port is already two_way, ignore it
+			      if(ports[i].router2.status != RouterStatus.TWO_WAY){
+			    	  Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
+					  OutputStream outToServer = target_socket.getOutputStream();
+				      ObjectOutputStream out = new ObjectOutputStream(outToServer);
+				      InputStream inFromServer = target_socket.getInputStream();
+				      ObjectInputStream in = new ObjectInputStream(inFromServer);
+				    //SOSPFPacket
+				      SOSPFPacket packet = new SOSPFPacket();
+				      packet.srcProcessIP = rd.processIPAddress;
+				      packet.srcProcessPort = rd.processPortNumber;
+				      packet.srcIP = rd.simulatedIPAddress;
+				      packet.dstIP = ports[i].router2.simulatedIPAddress;
+				      packet.sospfType = 0 ;
+				      packet.routerID = rd.simulatedIPAddress;
+				      
+				      out.writeObject(packet);
+				      out.flush();
+				      
+				    //read input packet from server
+				      try {
+						packet = (SOSPFPacket)in.readObject();
+				      } catch (ClassNotFoundException e) {
+						e.printStackTrace();
+				      }
+
+				      if (packet.sospfType == 0)
+				      {
+				    	  System.out.println("received HELLO from " + packet.srcIP + ";");
+				    	  ports[i].router2.status = RouterStatus.TWO_WAY;
+				    	  System.out.println("set " + packet.srcIP + " state to TWO_WAY");
+				      }
+						
+				      packet.srcProcessIP = rd.processIPAddress;
+				      packet.srcProcessPort = rd.processPortNumber;
+				      packet.srcIP = rd.simulatedIPAddress;
+				      packet.dstIP = ports[i].router2.simulatedIPAddress;
+				      packet.sospfType = 0;
+				      packet.routerID = rd.simulatedIPAddress;
+				      packet.neighborID = ports[i].router2.simulatedIPAddress;
+						
+				      out.flush(); 
+				      out.writeObject(packet);
+				      in.close();
+				      out.close();
+				      //close the socket 
+				      target_socket.close();
+				     
+			      }
+			      
+			      Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
 				  OutputStream outToServer = target_socket.getOutputStream();
 			      ObjectOutputStream out = new ObjectOutputStream(outToServer);
 			      InputStream inFromServer = target_socket.getInputStream();
 			      ObjectInputStream in = new ObjectInputStream(inFromServer);
-			      
-			      //SOSPFPacket
+			    //SOSPFPacket
 			      SOSPFPacket packet = new SOSPFPacket();
-			      packet.srcProcessIP = rd.processIPAddress;
-			      packet.srcProcessPort = rd.processPortNumber;
-			      packet.srcIP = rd.simulatedIPAddress;
-			      packet.dstIP = ports[i].router2.simulatedIPAddress;
-			      packet.sospfType = 0 ;
-			      packet.routerID = rd.simulatedIPAddress;
-			      
-			      out.writeObject(packet);
-			      out.flush();
-			      
-			      //read input packet from server
-			      try {
-					packet = (SOSPFPacket)in.readObject();
-			      } catch (ClassNotFoundException e) {
-					e.printStackTrace();
-			      }
-
-			      if (packet.sospfType == 0)
-			      {
-			    	  System.out.println("received HELLO from " + packet.srcIP + ";");
-			    	  ports[i].router2.status = RouterStatus.TWO_WAY;
-			    	  System.out.println("set " + packet.srcIP + " state to TWO_WAY");
-			      }
-					
-			      packet.srcProcessIP = rd.processIPAddress;
-			      packet.srcProcessPort = rd.processPortNumber;
-			      packet.srcIP = rd.simulatedIPAddress;
-			      packet.dstIP = ports[i].router2.simulatedIPAddress;
-			      packet.sospfType = 0;
-			      packet.routerID = rd.simulatedIPAddress;
-			      packet.neighborID = ports[i].router2.simulatedIPAddress;
-					
-			      
-			      out.writeObject(packet);
-			      out.flush();
 			   //link state advertisement update (LSA)
 			     
-			      //initialize LSAupdate packate
-//			      SOSPFPacket LSA_packet = new SOSPFPacket();
-//			      LSA_packet.srcProcessIP = rd.processIPAddress;
-//			      LSA_packet.srcProcessPort = rd.processPortNumber;
-//			      LSA_packet.srcIP = rd.simulatedIPAddress;
-//			      LSA_packet.dstIP = ports[i].router2.simulatedIPAddress;
-//			      LSA_packet.sospfType = 1 ;
-//			      LSA_packet.routerID = rd.simulatedIPAddress;
-//			      LSA_packet.lsaArray = new Vector<LSA>(lsaUpdate);
-//			      
-//			      
-//			      out.writeObject(LSA_packet);
-//			      out.flush();
-			      
+			 //     initialize LSAupdate packate
+			      packet = new SOSPFPacket();
 			      packet.srcProcessIP = rd.processIPAddress;
 			      packet.srcProcessPort = rd.processPortNumber;
 			      packet.srcIP = rd.simulatedIPAddress;
 			      packet.dstIP = ports[i].router2.simulatedIPAddress;
 			      packet.sospfType = 1 ;
 			      packet.routerID = rd.simulatedIPAddress;
+			      //increment sequence number
+			      for(int j = 0 ; j<lsaUpdate.size();j++){
+			    	  if( lsaUpdate.get(j)!=null){
+			    		  lsaUpdate.get(j).lsaSeqNumber++;
+			    	  }
+			      }
 			      packet.lsaArray = new Vector<LSA>(lsaUpdate);
-			      
 			      
 			      out.writeObject(packet);
 			      out.flush();
-			      
-			       
+//			      
+//			       
 			      in.close();
 			      out.close();
 			      //close the socket 
@@ -218,6 +223,7 @@ public class Router {
 			  }
 		  }  
 	  }
+	  System.out.println("_store: "+lsd._store.toString());
   }
 
   /**
