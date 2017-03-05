@@ -25,5 +25,6 @@ public class SOSPFPacket implements Serializable {
 
   //used by LSAUPDATE
   public Vector<LSA> lsaArray = null;
-
+  
+  public int weight;
 }

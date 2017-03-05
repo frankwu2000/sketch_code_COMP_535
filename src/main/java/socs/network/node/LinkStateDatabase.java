@@ -3,10 +3,16 @@ package socs.network.node;
 import socs.network.message.LSA;
 import socs.network.message.LinkDescription;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+
+import dijkstra.*;
 
 public class LinkStateDatabase {
 
@@ -25,42 +31,61 @@ public class LinkStateDatabase {
    * output the shortest path from this router to the destination with the given IP address
    */
   String getShortestPath(String destinationIP) {
-    String min_next_node = new String();
-    int min_weight=Integer.MAX_VALUE;
-	HashMap<String, LSA> tentative_list = new HashMap<String, LSA>();
-	HashMap<String, LSA> confirmed_list = new HashMap<String, LSA>();
-	
-	//add itself to confirmed_list at first step
-	confirmed_list.put(rd.simulatedIPAddress,_store.get(rd.simulatedIPAddress));
-	//add neighbors to tentative list
-	//loop through _stores
-	for( Map.Entry<String, LSA> entry: _store.entrySet()){
-		//if it is itself, skip
-		if(entry.getKey() == rd.simulatedIPAddress){
-			continue;
-		}
-		tentative_list.put(entry.getKey(), entry.getValue());
-	}
-	
-	//choose minimum weight from tentative list
-	for( Map.Entry<String, LSA> entry: tentative_list.entrySet()){
-		if(entry.getValue().links.peekLast().tosMetrics < min_weight){
-			min_weight = entry.getValue().links.peekLast().tosMetrics;
-			min_next_node = entry.getKey();
-		}
-	}
-	//add the minimum weight node to confirmed list
-	confirmed_list.put(min_next_node,_store.get(min_next_node));
-	
+	  List<Vertex> vertices = new ArrayList<Vertex>();
+	  List<Edge> edges = new ArrayList<Edge>();
+	  for (Map.Entry<String, LSA> entry : _store.entrySet())
+	  {
+		  vertices.add(new Vertex(entry.getKey()));
+		  for (int i = 0; i < entry.getValue().links.size(); i++)
+		  {
+			  Vertex source = new Vertex(entry.getKey());
+			  Vertex dest = new Vertex(entry.getValue().links.get(i).linkID);
+			  if (!source.equals(dest))
+			  {
+				  Edge new_edge = new Edge(source,dest,entry.getValue().links.get(i).tosMetrics);
+				  edges.add(new_edge);
+			  }
+		  }
+	  }
+	  /*
+	  // Remove duplicates
+	  for (int i = 0; i < edges.size(); i++)
+	  {
+		  for (int j = 0; j < edges.size(); j++)
+		  {
+			  if (edges.get(j).equals(edges.get(i).reverse()))
+			  {
+				  edges.remove(j);
+			  }
+		  }
+	  }*/
 	  
-    return null;
+	  Graph network = new Graph(vertices, edges);
+	  DijkstraAlgorithm algo = new DijkstraAlgorithm(network);
+	  
+	  // Convert source & dest to Vertex class
+	  algo.execute(rd.simulatedIPAddress);
+	  
+	  LinkedList<Vertex> shortestPath = algo.getPath(destinationIP);
+	  
+	  String return_string = new String();
+	  for (int i = 0; i < shortestPath.size() - 1; i++)
+	  {
+		  return_string += shortestPath.get(i).getName();
+		  return_string += " ->(";
+		  return_string += network.weightByVertices(shortestPath.get(i), shortestPath.get(i+1));
+		  return_string += ") ";
+	  }
+	  return_string += shortestPath.get(shortestPath.size() - 1).getName();
+
+	  return return_string;
   }
 
   //initialize the linkstate database by adding an entry about the router itself
   private LSA initLinkStateDatabase() {
     LSA lsa = new LSA();
     lsa.linkStateID = rd.simulatedIPAddress;
-    lsa.lsaSeqNumber = Integer.MIN_VALUE;
+    lsa.lsaSeqNumber = 0;
     LinkDescription ld = new LinkDescription();
     ld.linkID = rd.simulatedIPAddress;
     ld.portNum = -1;

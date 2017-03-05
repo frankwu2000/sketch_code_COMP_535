@@ -50,7 +50,8 @@ public class Router {
    * @param destinationIP the ip adderss of the destination simulated router
    */
   private void processDetect(String destinationIP) {
-	  
+	  String path = lsd.getShortestPath(destinationIP);
+	  System.out.println(path);
   }
 
   /**
@@ -114,6 +115,8 @@ public class Router {
    */
   private void processStart() {
 	  //get linkstatedatabase hashmap (neighbor information)
+	  //when start(), increase sequence number for its own LSA
+	  lsd._store.get(rd.simulatedIPAddress).lsaSeqNumber ++;
 	  //loop through the link state database hashmap
 	  Vector<LSA> lsaUpdate = new Vector<LSA>();
       for (Map.Entry<String, LSA> entry : lsd._store.entrySet())
@@ -150,6 +153,14 @@ public class Router {
 				      packet.dstIP = ports[i].router2.simulatedIPAddress;
 				      packet.sospfType = 0 ;
 				      packet.routerID = rd.simulatedIPAddress;
+				      //find the linkdescription of the attached router
+				      int temp_weight = 0;
+				      for(int j = 0 ;j<lsd._store.get(rd.simulatedIPAddress).links.size();j++){
+				    	  if(lsd._store.get(rd.simulatedIPAddress).links.get(j)!=null&&lsd._store.get(rd.simulatedIPAddress).links.get(j).linkID.equals(ports[i].router2.simulatedIPAddress)){
+				    		  temp_weight = lsd._store.get(rd.simulatedIPAddress).links.get(j).tosMetrics;
+				    	  }
+				      }
+				      packet.weight = temp_weight;
 				      
 				      out.writeObject(packet);
 				      out.flush();
@@ -176,6 +187,7 @@ public class Router {
 				      packet.sospfType = 0;
 				      packet.routerID = rd.simulatedIPAddress;
 				      packet.neighborID = ports[i].router2.simulatedIPAddress;
+				      packet.weight = temp_weight;
 						
 				      out.flush();
 				      out.writeObject(packet);
@@ -188,8 +200,6 @@ public class Router {
 				     // out.close();
 				      //close the socket 
 				     // target_socket.close();
-
-				     
 			      }
 			      
 			   //   Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
@@ -198,26 +208,23 @@ public class Router {
 			   //   InputStream inFromServer = target_socket.getInputStream();
 			   //   ObjectInputStream in = new ObjectInputStream(inFromServer);
 			    
-			   //link state advertisement update (LSA)
-			    //SOSPFPacket
-			      SOSPFPacket packet = new SOSPFPacket(); 
-			 //     initialize LSAupdate packet
-			      packet.srcProcessIP = rd.processIPAddress;
-			      packet.srcProcessPort = rd.processPortNumber;
-			      packet.srcIP = rd.simulatedIPAddress;
-			      packet.dstIP = ports[i].router2.simulatedIPAddress;
-			      packet.sospfType = 1;
-			      packet.routerID = rd.simulatedIPAddress;
-			      //increment sequence number
-			      for(int j = 0 ; j<lsaUpdate.size();j++){
-			    	  if( lsaUpdate.get(j)!=null){
-			    		  lsaUpdate.get(j).lsaSeqNumber++;
-			    	  }
+			      if(ports[i].router2.status == RouterStatus.TWO_WAY){
+			    	//link state advertisement update (LSA)
+					    //SOSPFPacket
+					      SOSPFPacket packet = new SOSPFPacket(); 
+					 //     initialize LSAupdate packet
+					      packet.srcProcessIP = rd.processIPAddress;
+					      packet.srcProcessPort = rd.processPortNumber;
+					      packet.srcIP = rd.simulatedIPAddress;
+					      packet.dstIP = ports[i].router2.simulatedIPAddress;
+					      packet.sospfType = 1;
+					      packet.routerID = rd.simulatedIPAddress;
+					     
+					      packet.lsaArray = new Vector<LSA>(lsaUpdate);
+					      
+					      out.flush();
+					      out.writeObject(packet);
 			      }
-			      packet.lsaArray = new Vector<LSA>(lsaUpdate);
-			      
-			      out.flush();
-			      out.writeObject(packet);
 
 			      in.close();
 			      out.close();
