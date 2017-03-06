@@ -86,7 +86,7 @@ public class Router {
 	  
 	  if(!duplicate){
 		  for(int i=0; i<ports.length;i++){
-			  //instantiate links of the router
+			  // Locate an empty port, and instantiate the link
 			  if(ports[i] == null){
 				  RouterDescription r2 = new RouterDescription();
 				  r2.processIPAddress = processIP;
@@ -94,14 +94,13 @@ public class Router {
 				  r2.simulatedIPAddress = simulatedIP;
 				  ports[i] = new Link(this.rd, r2); 
 			
-				  
+				  // Create the LSA for the link and add it to the database
 				  LSA lsa = lsd._store.get(rd.simulatedIPAddress);
 				  LinkDescription ld = new LinkDescription();
 				  ld.linkID = simulatedIP;
 				  ld.portNum = processPort;
 				  ld.tosMetrics = weight;
 				  lsa.links.add(ld);
-				  //add the new LSA to the hash map
 				  lsd._store.put(rd.simulatedIPAddress, lsa);
 				  
 				  break;
@@ -114,38 +113,29 @@ public class Router {
    * broadcast Hello to neighbors
    */
   private void processStart() {
-	  //get linkstatedatabase hashmap (neighbor information)
-	  //when start(), increase sequence number for its own LSA
-	  lsd._store.get(rd.simulatedIPAddress).lsaSeqNumber ++;
-	  //loop through the link state database hashmap
+	  // Increment LSA sequence number for self every time start() is called
+	  lsd._store.get(rd.simulatedIPAddress).lsaSeqNumber++;
+	  // Create the vector of LSA to be send in the update packet
 	  Vector<LSA> lsaUpdate = new Vector<LSA>();
       for (Map.Entry<String, LSA> entry : lsd._store.entrySet())
       {
     	  lsaUpdate.add(entry.getValue());
       }
 	  
-    //client socket
 	  for(int i=0;i<ports.length;i++){
-		  //check if port is already two_way
+		  // If the port is already two-way, print a notification
 		  if(ports[i]!=null && ports[i].router2.status == RouterStatus.TWO_WAY){
 			  System.out.println("port "+ ports[i].router2.simulatedIPAddress +" is TWO_WAY already!");
 		  }
-		  //if port is already two_way, ignore it
 		  if(ports[i]!=null){
 			  try{
-				  //if port is already two_way, ignore it
 				  Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
 				  OutputStream outToServer = target_socket.getOutputStream();
 			      ObjectOutputStream out = new ObjectOutputStream(outToServer);
 			      InputStream inFromServer = target_socket.getInputStream();
 			      ObjectInputStream in = new ObjectInputStream(inFromServer);
+			      // If the current port is not yet two-way, prepare to send HELLO
 			      if(ports[i].router2.status != RouterStatus.TWO_WAY){
-//			    	  Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
-//					  OutputStream outToServer = target_socket.getOutputStream();
-//				      ObjectOutputStream out = new ObjectOutputStream(outToServer);
-//				      InputStream inFromServer = target_socket.getInputStream();
-//				      ObjectInputStream in = new ObjectInputStream(inFromServer);
-//				    //SOSPFPacket
 				      SOSPFPacket packet = new SOSPFPacket();
 				      packet.srcProcessIP = rd.processIPAddress;
 				      packet.srcProcessPort = rd.processPortNumber;
@@ -153,8 +143,8 @@ public class Router {
 				      packet.dstIP = ports[i].router2.simulatedIPAddress;
 				      packet.sospfType = 0 ;
 				      packet.routerID = rd.simulatedIPAddress;
-				      //find the linkdescription of the attached router
 				      int temp_weight = 0;
+				      // Obtain link weight from the link in the router's database
 				      for(int j = 0 ;j<lsd._store.get(rd.simulatedIPAddress).links.size();j++){
 				    	  if(lsd._store.get(rd.simulatedIPAddress).links.get(j)!=null&&lsd._store.get(rd.simulatedIPAddress).links.get(j).linkID.equals(ports[i].router2.simulatedIPAddress)){
 				    		  temp_weight = lsd._store.get(rd.simulatedIPAddress).links.get(j).tosMetrics;
@@ -162,23 +152,26 @@ public class Router {
 				      }
 				      packet.weight = temp_weight;
 				      
+				      // Send first HELLO
 				      out.writeObject(packet);
 				      out.flush();
 				      
-				    //read input packet from server
+				      // Wait for response
 				      try {
 						packet = (SOSPFPacket)in.readObject();
 				      } catch (ClassNotFoundException e) {
 						e.printStackTrace();
 				      }
-
+				      
+				      // Received response HELLO
 				      if (packet.sospfType == 0)
 				      {
 				    	  System.out.println("received HELLO from " + packet.srcIP + ";");
 				    	  ports[i].router2.status = RouterStatus.TWO_WAY;
 				    	  System.out.println("set " + packet.srcIP + " state to TWO_WAY");
 				      }
-						
+				      
+				      // Send second hello
 				      packet = new SOSPFPacket();
 				      packet.srcProcessIP = rd.processIPAddress;
 				      packet.srcProcessPort = rd.processPortNumber;
@@ -191,44 +184,28 @@ public class Router {
 						
 				      out.flush();
 				      out.writeObject(packet);
-				     // in.close();
-
-				     //out.close();
-				      //close the socket 
-				      //target_socket.close();
-
-				     // out.close();
-				      //close the socket 
-				     // target_socket.close();
 			      }
-			      
-			   //   Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
-				//  OutputStream outToServer = target_socket.getOutputStream();
-			    //  ObjectOutputStream out = new ObjectOutputStream(outToServer);
-			   //   InputStream inFromServer = target_socket.getInputStream();
-			   //   ObjectInputStream in = new ObjectInputStream(inFromServer);
 			    
-			      if(ports[i].router2.status == RouterStatus.TWO_WAY){
-			    	//link state advertisement update (LSA)
-					    //SOSPFPacket
-					      SOSPFPacket packet = new SOSPFPacket(); 
-					 //     initialize LSAupdate packet
-					      packet.srcProcessIP = rd.processIPAddress;
-					      packet.srcProcessPort = rd.processPortNumber;
-					      packet.srcIP = rd.simulatedIPAddress;
-					      packet.dstIP = ports[i].router2.simulatedIPAddress;
-					      packet.sospfType = 1;
-					      packet.routerID = rd.simulatedIPAddress;
-					     
-					      packet.lsaArray = new Vector<LSA>(lsaUpdate);
-					      
-					      out.flush();
-					      out.writeObject(packet);
+			      if(ports[i].router2.status == RouterStatus.TWO_WAY)
+			      {
+			    	  // Populate the LSAupdate packet
+			    	  SOSPFPacket packet = new SOSPFPacket(); 
+					  packet.srcProcessIP = rd.processIPAddress;
+					  packet.srcProcessPort = rd.processPortNumber;
+					  packet.srcIP = rd.simulatedIPAddress;
+					  packet.dstIP = ports[i].router2.simulatedIPAddress;
+					  packet.sospfType = 1;
+					  packet.routerID = rd.simulatedIPAddress;
+					  packet.lsaArray = new Vector<LSA>(lsaUpdate);
+					  
+					  out.flush();
+					  out.writeObject(packet);
 			      }
 
+
+			      // Close the streams and the socket
 			      in.close();
 			      out.close();
-			      //close the socket 
 			      target_socket.close();
 			      
 				  

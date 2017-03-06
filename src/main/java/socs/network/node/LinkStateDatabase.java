@@ -4,10 +4,7 @@ import socs.network.message.LSA;
 import socs.network.message.LinkDescription;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +28,7 @@ public class LinkStateDatabase {
    * output the shortest path from this router to the destination with the given IP address
    */
   String getShortestPath(String destinationIP) {
+	  // The vertices and edges sets to be made into the graph
 	  List<Vertex> vertices = new ArrayList<Vertex>();
 	  List<Edge> edges = new ArrayList<Edge>();
 	  
@@ -38,21 +36,11 @@ public class LinkStateDatabase {
 	  for (Map.Entry<String, LSA> entry : _store.entrySet())
 	  {
 		  vertices.add(new Vertex(entry.getKey()));
-		  /*
-		  for (int i = 0; i < entry.getValue().links.size(); i++)
-		  {
-			  Vertex source = new Vertex(entry.getKey());
-			  Vertex dest = new Vertex(entry.getValue().links.get(i).linkID);
-			  if (!source.equals(dest))
-			  {
-				  Edge new_edge = new Edge(source,dest,entry.getValue().links.get(i).tosMetrics);
-				  edges.add(new_edge);
-			  }
-		  }*/
 	  }
 	  // Populate the graph with edges, now that the vertices are present
 	  for (Map.Entry<String, LSA> entry : _store.entrySet())
 	  {
+		  // For each link leading out from a router, create an edge
 		  for (int i = 0; i < entry.getValue().links.size(); i++)
 		  {
 			  Vertex source = new Vertex("");
@@ -76,27 +64,18 @@ public class LinkStateDatabase {
 			  }
 		  }
 	  }
-	  /*
-	  // Remove duplicates
-	  for (int i = 0; i < edges.size(); i++)
-	  {
-		  for (int j = edges.size()- 1; j >= 0; j--)
-		  {
-			  if (edges.get(j).equals(edges.get(i).reverse()))
-			  {
-				  edges.remove(j);
-			  }
-		  }
-	  }*/
 	  
+	  // Create the graph, and the DijkstraAlgorithm class
 	  Graph network = new Graph(vertices, edges);
 	  DijkstraAlgorithm algo = new DijkstraAlgorithm(network);
 	  
-	  // Convert source & dest to Vertex class
+	  // Execute performs the algorithm on passed vertex as source
 	  algo.execute(rd.simulatedIPAddress);
 	  
+	  // After execution, one can extract shortest path to any destination from source with getPath
 	  LinkedList<Vertex> shortestPath = algo.getPath(destinationIP);
 	  
+	  // Generate return string
 	  String return_string = new String();
 	  for (int i = 0; i < shortestPath.size() - 1; i++)
 	  {

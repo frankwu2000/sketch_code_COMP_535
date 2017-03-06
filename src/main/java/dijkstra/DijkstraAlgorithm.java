@@ -25,6 +25,7 @@ public class DijkstraAlgorithm {
 		this.edges = new ArrayList<Edge>(graph.getEdges());
 	}
 	
+	// This executes Dijkstra's algorithm on source vertex with identifier sourceName
 	public void execute(String sourceName)
 	{
 		Vertex source = null;
@@ -121,6 +122,7 @@ public class DijkstraAlgorithm {
 		}
 	}
 	
+	// This returns the shortest path from source to target as a LinkedList of vertices
 	public LinkedList<Vertex> getPath(String targetName)
 	{
 		Vertex target = null;

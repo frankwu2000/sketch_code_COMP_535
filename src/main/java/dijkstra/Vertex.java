@@ -3,9 +3,9 @@ package dijkstra;
 public class Vertex {
 	final private String name;
 	
-	public Vertex(String ip_addr)
+	public Vertex(String identifier)
 	{
-		this.name = ip_addr;
+		this.name = identifier;
 	}
 	
 	public String getName()

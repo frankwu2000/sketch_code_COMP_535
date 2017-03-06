@@ -22,6 +22,7 @@ public class Graph {
 		return edges;
 	}
 	
+	// Obtain the weight of an edge, given its ends
 	public int weightByVertices(Vertex a, Vertex b)
 	{
 		for (Edge e : edges)
