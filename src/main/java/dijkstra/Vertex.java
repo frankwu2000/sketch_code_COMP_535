@@ -10,7 +10,7 @@ public class Vertex {
 	
 	public String getName()
 	{
-		return name;
+		return this.name;
 	}
 	
 	public boolean equals(Vertex v)

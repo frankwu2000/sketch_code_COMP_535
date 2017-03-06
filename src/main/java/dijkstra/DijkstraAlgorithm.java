@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class DijkstraAlgorithm {
+	
 	private final List<Vertex> nodes;
 	private final List<Edge> edges;
 	private Set<Vertex> solved;
@@ -33,7 +35,7 @@ public class DijkstraAlgorithm {
 		}
 		solved = new HashSet<Vertex>();
 		processing = new HashSet<Vertex>();
-		predecessors = new HashMap<Vertex, Vertex>();
+		predecessors = new IdentityHashMap<Vertex, Vertex>();
 		distance = new HashMap<Vertex, Integer>();
 		distance.put(source, 0);
 		processing.add(source);
@@ -127,12 +129,16 @@ public class DijkstraAlgorithm {
 			if (v.getName().equals(targetName))
 				target = v;
 		}
+		if (target == null)
+		{
+			throw new RuntimeException("Something went wrong finding target Vertex");
+		}
 		LinkedList<Vertex> path = new LinkedList<Vertex>();
-		Vertex step = new Vertex(targetName);
-		if (!predecessors.containsKey(step))
+		Vertex step = target;
+		if (predecessors.get(step) == null)
 			return null;
 		path.add(step);
-		while (predecessors.containsKey(step))
+		while (predecessors.get(step) != null)
 		{
 			step = predecessors.get(step);
 			path.add(step);

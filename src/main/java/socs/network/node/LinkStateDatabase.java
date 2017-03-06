@@ -33,13 +33,42 @@ public class LinkStateDatabase {
   String getShortestPath(String destinationIP) {
 	  List<Vertex> vertices = new ArrayList<Vertex>();
 	  List<Edge> edges = new ArrayList<Edge>();
+	  
+	  // Add all vertices into the graph
 	  for (Map.Entry<String, LSA> entry : _store.entrySet())
 	  {
 		  vertices.add(new Vertex(entry.getKey()));
+		  /*
 		  for (int i = 0; i < entry.getValue().links.size(); i++)
 		  {
 			  Vertex source = new Vertex(entry.getKey());
 			  Vertex dest = new Vertex(entry.getValue().links.get(i).linkID);
+			  if (!source.equals(dest))
+			  {
+				  Edge new_edge = new Edge(source,dest,entry.getValue().links.get(i).tosMetrics);
+				  edges.add(new_edge);
+			  }
+		  }*/
+	  }
+	  // Populate the graph with edges, now that the vertices are present
+	  for (Map.Entry<String, LSA> entry : _store.entrySet())
+	  {
+		  for (int i = 0; i < entry.getValue().links.size(); i++)
+		  {
+			  Vertex source = new Vertex("");
+			  Vertex dest = new Vertex("");
+			  for (int j = 0; j < vertices.size(); j++)
+			  {
+				  if (vertices.get(j).getName().equals(entry.getKey()))
+				  {
+					  source = vertices.get(j);
+				  }
+				  if (vertices.get(j).getName().equals(entry.getValue().links.get(i).linkID))
+				  {
+					  dest = vertices.get(j);
+				  }
+			  }
+			  
 			  if (!source.equals(dest))
 			  {
 				  Edge new_edge = new Edge(source,dest,entry.getValue().links.get(i).tosMetrics);
@@ -51,7 +80,7 @@ public class LinkStateDatabase {
 	  // Remove duplicates
 	  for (int i = 0; i < edges.size(); i++)
 	  {
-		  for (int j = 0; j < edges.size(); j++)
+		  for (int j = edges.size()- 1; j >= 0; j--)
 		  {
 			  if (edges.get(j).equals(edges.get(i).reverse()))
 			  {

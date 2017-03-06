@@ -14,17 +14,17 @@ public class Edge {
 	
 	public Vertex getSource()
 	{
-		return source;
+		return this.source;
 	}
 	
 	public Vertex getDest()
 	{
-		return dest;
+		return this.dest;
 	}
 	
 	public int getWeight()
 	{
-		return weight;
+		return this.weight;
 	}
 	
 	public Edge reverse()
