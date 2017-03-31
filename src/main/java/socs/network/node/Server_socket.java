@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import socs.network.message.LSA;
+import socs.network.message.LinkDescription;
 import socs.network.message.SOSPFPacket;
 
 import java.io.*;
@@ -77,7 +78,12 @@ public class Server_socket extends Thread {
 					router.ports[linkPort].router2.status = RouterStatus.TWO_WAY;
 					System.out.println("set " + in_packet.srcIP + " state to TWO_WAY");
 					
-					
+					//add the neighbor to linkstate database under its own key
+					LinkDescription ld_temp =  new LinkDescription();
+					ld_temp.linkID = in_packet.srcIP;
+					ld_temp.portNum = in_packet.srcProcessPort;
+					ld_temp.tosMetrics = in_packet.weight;
+					router.lsd._store.get(router.rd.simulatedIPAddress).links.add(ld_temp);
 					
 					// This is to read the update packet immediately after the second HELLO
 					try {
@@ -88,7 +94,8 @@ public class Server_socket extends Thread {
 				}
 				
 				if (in_packet.sospfType == 1)
-				{
+				{	
+					boolean Update = false;
 					//receive broadcast of LSAupdate
 					Vector<LSA> lsaUpdate = new Vector<LSA>(in_packet.lsaArray);
 					//save the broadcast to linkstate database
@@ -96,9 +103,10 @@ public class Server_socket extends Thread {
 						if(router.lsd._store.containsKey(lsaUpdate.get(i).linkStateID)){
 							//if the incoming lsa is already stored in the linkstate database
 							//compare their sequence number
-							if(router.lsd._store.get(lsaUpdate.get(i).linkStateID).lsaSeqNumber <= lsaUpdate.get(i).lsaSeqNumber){
+							if(router.lsd._store.get(lsaUpdate.get(i).linkStateID).lsaSeqNumber < lsaUpdate.get(i).lsaSeqNumber){
 								//update lsa to the lsdb
 								router.lsd._store.put(lsaUpdate.get(i).linkStateID, lsaUpdate.get(i));
+								Update = true;
 							}
 							//else skip this lsa
 						}else{
@@ -107,43 +115,52 @@ public class Server_socket extends Thread {
 						}
 					}
 					
-					//save the current linkstate to the vector new_lsaUpdate
-					Vector<LSA> new_lsaUpdate = new Vector<LSA>();
-					for (Map.Entry<String, LSA> entry : router.lsd._store.entrySet())
-				    {
-						new_lsaUpdate.add(entry.getValue());
-				    }
-				    client_socket.close();
+					 client_socket.close();
 					//broadcast current linkstate database to all neighbors except the sender of the packet
-					for(int i=0;i<router.ports.length;i++){
-						if(router.ports[i]!= null && !(router.ports[i].router2.simulatedIPAddress.equals(in_packet.srcIP))){
-							//create a new socket for each neighbor
-							Socket target_socket = new Socket(router.ports[i].router2.processIPAddress,router.ports[i].router2.processPortNumber);
-							OutputStream outToServer = target_socket.getOutputStream();
-						    ObjectOutputStream new_out = new ObjectOutputStream(outToServer);
-						    //write the out packet
-						    SOSPFPacket LSA_packet = new SOSPFPacket();
-						    LSA_packet.srcProcessIP = router.rd.processIPAddress;
-						    LSA_packet.srcProcessPort = router.rd.processPortNumber;
-						    LSA_packet.srcIP = router.rd.simulatedIPAddress;
-						    LSA_packet.dstIP = router.ports[i].router2.simulatedIPAddress;
-						    LSA_packet.sospfType = 1 ;
-						    LSA_packet.routerID = router.rd.simulatedIPAddress;
-						    //increment sequence number
-						    for(int j = 0 ; j<new_lsaUpdate.size();j++){
-						    	if (new_lsaUpdate.get(j) != null)
-						    		new_lsaUpdate.get(j).lsaSeqNumber++;
-						    }
-						    LSA_packet.lsaArray = new Vector<LSA>(new_lsaUpdate);
-						      
-						    new_out.writeObject( LSA_packet);
-						    new_out.flush();
-						      
-						    target_socket.close();
+
+				    
+				  //broadcast current linkstate database to all neighbors except the sender of the packet
+				   if(Update){
+					 //save the current linkstate to the vector new_lsaUpdate
+						Vector<LSA> new_lsaUpdate = new Vector<LSA>();
+						for (Map.Entry<String, LSA> entry : router.lsd._store.entrySet())
+					    {
+							new_lsaUpdate.add(entry.getValue());
+					    }
+						
+					   for(int i=0;i<router.ports.length;i++){
+							if(router.ports[i]!= null &&router.ports[i].router2.status==RouterStatus.TWO_WAY&& !(router.ports[i].router2.simulatedIPAddress.equals(in_packet.srcIP))){
+								//create a new socket for each neighbor
+								Socket target_socket = new Socket(router.ports[i].router2.processIPAddress,router.ports[i].router2.processPortNumber);
+								OutputStream outToServer = target_socket.getOutputStream();
+							    ObjectOutputStream new_out = new ObjectOutputStream(outToServer);
+							    //write the out packet
+							    SOSPFPacket LSA_packet = new SOSPFPacket();
+							    LSA_packet.srcProcessIP = router.rd.processIPAddress;
+							    LSA_packet.srcProcessPort = router.rd.processPortNumber;
+							    LSA_packet.srcIP = router.rd.simulatedIPAddress;
+							    LSA_packet.dstIP = router.ports[i].router2.simulatedIPAddress;
+							    LSA_packet.sospfType = 1 ;
+							    LSA_packet.routerID = router.rd.simulatedIPAddress;
+//							    //increment sequence number
+//							    for(int j = 0 ; j<new_lsaUpdate.size();j++){
+//							    	if (new_lsaUpdate.get(j) != null&& new_lsaUpdate.get(j).linkStateID.equals(router.rd.simulatedIPAddress))
+//							    		new_lsaUpdate.get(j).lsaSeqNumber++;
+//							    }
+							    LSA_packet.lsaArray = new Vector<LSA>(new_lsaUpdate);
+							      
+							    new_out.writeObject( LSA_packet);
+							    new_out.flush();
+							      
+							    target_socket.close();
+							}
 						}
-					}
+				   }
+					
 				}
+
 				//client_socket.close();
+
 			}
 			catch(IOException e) {
 	            e.printStackTrace();
