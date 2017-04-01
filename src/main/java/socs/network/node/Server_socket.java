@@ -87,8 +87,19 @@ public class Server_socket extends Thread {
 					}
 				}
 				
+<<<<<<< Updated upstream
 				if (in_packet.sospfType == 1)
 				{
+=======
+<<<<<<< HEAD
+				//receive LSA packet
+				if (in_packet.sospfType == 1){
+					System.out.println("debug");
+=======
+				if (in_packet.sospfType == 1)
+				{
+>>>>>>> origin/master
+>>>>>>> Stashed changes
 					//receive broadcast of LSAupdate
 					Vector<LSA> lsaUpdate = new Vector<LSA>(in_packet.lsaArray);
 					//save the broadcast to linkstate database

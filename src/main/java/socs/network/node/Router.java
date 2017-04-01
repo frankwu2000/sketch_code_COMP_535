@@ -131,11 +131,78 @@ public class Router {
 		  if(ports[i]!=null){
 			  try{
 				  //if port is already two_way, ignore it
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+			      if(ports[i].router2.status != RouterStatus.TWO_WAY){
+			    	  Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
+					  OutputStream outToServer = target_socket.getOutputStream();
+				      ObjectOutputStream out = new ObjectOutputStream(outToServer);
+				      InputStream inFromServer = target_socket.getInputStream();
+				      ObjectInputStream in = new ObjectInputStream(inFromServer);
+				    //SOSPFPacket
+				      SOSPFPacket packet = new SOSPFPacket();
+				      packet.srcProcessIP = rd.processIPAddress;
+				      packet.srcProcessPort = rd.processPortNumber;
+				      packet.srcIP = rd.simulatedIPAddress;
+				      packet.dstIP = ports[i].router2.simulatedIPAddress;
+				      packet.sospfType = 0 ;
+				      packet.routerID = rd.simulatedIPAddress;
+				      
+				      out.writeObject(packet);
+				      out.flush();
+				      
+				    //read input packet from server
+				      try {
+						packet = (SOSPFPacket)in.readObject();
+				      } catch (ClassNotFoundException e) {
+						e.printStackTrace();
+				      }
+
+				      if (packet.sospfType == 0)
+				      {
+				    	  System.out.println("received HELLO from " + packet.srcIP + ";");
+				    	  ports[i].router2.status = RouterStatus.TWO_WAY;
+				    	  System.out.println("set " + packet.srcIP + " state to TWO_WAY");
+				      }
+						
+				      packet.srcProcessIP = rd.processIPAddress;
+				      packet.srcProcessPort = rd.processPortNumber;
+				      packet.srcIP = rd.simulatedIPAddress;
+				      packet.dstIP = ports[i].router2.simulatedIPAddress;
+				      packet.sospfType = 0;
+				      packet.routerID = rd.simulatedIPAddress;
+				      packet.neighborID = ports[i].router2.simulatedIPAddress;
+						
+				      out.flush(); 
+				      out.writeObject(packet);
+				      in.close();
+				      out.close();
+				      //close the socket 
+				      target_socket.close();
+				     
+			      }
+			      
+			      Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
+=======
+>>>>>>> Stashed changes
 				  Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
+>>>>>>> origin/master
 				  OutputStream outToServer = target_socket.getOutputStream();
 			      ObjectOutputStream out = new ObjectOutputStream(outToServer);
 			      InputStream inFromServer = target_socket.getInputStream();
 			      ObjectInputStream in = new ObjectInputStream(inFromServer);
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+			    //SOSPFPacket
+			      SOSPFPacket packet = new SOSPFPacket();
+			   //link state advertisement update (LSA)
+			     
+			 //     initialize LSAupdate packate
+			      packet = new SOSPFPacket();
+=======
+>>>>>>> Stashed changes
 			      if(ports[i].router2.status != RouterStatus.TWO_WAY){
 //			    	  Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
 //					  OutputStream outToServer = target_socket.getOutputStream();
@@ -196,6 +263,10 @@ public class Router {
 			    //SOSPFPacket
 			      SOSPFPacket packet = new SOSPFPacket(); 
 			 //     initialize LSAupdate packet
+<<<<<<< Updated upstream
+=======
+>>>>>>> origin/master
+>>>>>>> Stashed changes
 			      packet.srcProcessIP = rd.processIPAddress;
 			      packet.srcProcessPort = rd.processPortNumber;
 			      packet.srcIP = rd.simulatedIPAddress;
@@ -206,13 +277,32 @@ public class Router {
 			      for(int j = 0 ; j<lsaUpdate.size();j++){
 			    	  if( lsaUpdate.get(j)!=null){
 			    		  lsaUpdate.get(j).lsaSeqNumber++;
+<<<<<<< Updated upstream
 			    	  }
 			      }
 			      packet.lsaArray = new Vector<LSA>(lsaUpdate);
 			      
 			      out.flush();
+=======
+<<<<<<< HEAD
+			    	  }		    	  
+			      }
+			      packet.lsaArray = new Vector<LSA>(lsaUpdate);
+			      
+			      out.writeObject(packet);
+			      out.flush();
+//			      
+//			       
+=======
+			    	  }
+			      }
+			      packet.lsaArray = new Vector<LSA>(lsaUpdate);
+			      
+			      out.flush();
+>>>>>>> Stashed changes
 			      out.writeObject(packet);
 			       
+>>>>>>> origin/master
 			      in.close();
 			      out.close();
 			      //close the socket 
@@ -224,6 +314,7 @@ public class Router {
 			  }
 		  }  
 	  }
+	  System.out.println("_store: "+lsd._store.toString());
   }
 
   /**
