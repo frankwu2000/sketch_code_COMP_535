@@ -104,9 +104,14 @@ public class Server_socket extends Thread {
 					System.out.println("debug");
 =======
 				if (in_packet.sospfType == 1)
+<<<<<<< HEAD
 				{
 >>>>>>> origin/master
 >>>>>>> Stashed changes
+=======
+				{	
+					boolean Update = false;
+>>>>>>> origin/master
 =======
 				{	
 					boolean Update = false;
