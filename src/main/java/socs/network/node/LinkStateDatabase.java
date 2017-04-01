@@ -28,7 +28,10 @@ public class LinkStateDatabase {
    * output the shortest path from this router to the destination with the given IP address
    */
   String getShortestPath(String destinationIP) {
+
 	  // The vertices and edges sets to be made into the graph
+
+
 	  List<Vertex> vertices = new ArrayList<Vertex>();
 	  List<Edge> edges = new ArrayList<Edge>();
 	  
@@ -71,6 +74,7 @@ public class LinkStateDatabase {
 	  
 	  // Execute performs the algorithm on passed vertex as source
 	  algo.execute(rd.simulatedIPAddress);
+
 	  
 	  // After execution, one can extract shortest path to any destination from source with getPath
 	  LinkedList<Vertex> shortestPath = algo.getPath(destinationIP);
@@ -93,6 +97,9 @@ public class LinkStateDatabase {
   private LSA initLinkStateDatabase() {
     LSA lsa = new LSA();
     lsa.linkStateID = rd.simulatedIPAddress;
+
+  //  lsa.lsaSeqNumber = Integer.MIN_VALUE;
+
     lsa.lsaSeqNumber = 0;
     LinkDescription ld = new LinkDescription();
     ld.linkID = rd.simulatedIPAddress;

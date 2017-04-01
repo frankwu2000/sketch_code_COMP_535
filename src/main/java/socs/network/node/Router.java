@@ -225,7 +225,44 @@ public class Router {
    */
   private void processConnect(String processIP, short processPort,
                               String simulatedIP, short weight) {
-
+	  //attach part
+	  boolean duplicate = false;
+	  for(int i=0; i<ports.length;i++){
+		  if(ports[i] != null ){
+			  if(ports[i].router2.simulatedIPAddress.equals(simulatedIP)){
+				  System.out.println("Error, this router is already a neighbor! ");
+				  duplicate = true;
+				  break;
+			  }
+		  }  
+	  }
+	  
+	  if(!duplicate){
+		  for(int i=0; i<ports.length;i++){
+			  // Locate an empty port, and instantiate the link
+			  if(ports[i] == null){
+				  RouterDescription r2 = new RouterDescription();
+				  r2.processIPAddress = processIP;
+				  r2.processPortNumber = processPort;
+				  r2.simulatedIPAddress = simulatedIP;
+				  ports[i] = new Link(this.rd, r2); 
+			
+				  // Create the LSA for the link and add it to the database
+				  LSA lsa = lsd._store.get(rd.simulatedIPAddress);
+				  LinkDescription ld = new LinkDescription();
+				  ld.linkID = simulatedIP;
+				  ld.portNum = processPort;
+				  ld.tosMetrics = weight;
+				  lsa.links.add(ld);
+				  lsd._store.put(rd.simulatedIPAddress, lsa);
+				  
+				  break;
+			  }else if(i==ports.length-1){
+				  System.out.println("No more slots for new router");
+			  }
+		  }
+	  }
+	  
   }
 
   /**
