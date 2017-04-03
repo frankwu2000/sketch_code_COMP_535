@@ -14,6 +14,9 @@ import socs.network.util.Configuration;
 
 public class Router {
 
+
+	private boolean isStart;
+
 	protected LinkStateDatabase lsd;
 
 	RouterDescription rd = new RouterDescription();
@@ -50,6 +53,11 @@ public class Router {
 	 * @param destinationIP the ip adderss of the destination simulated router
 	 */
 	private void processDetect(String destinationIP) {
+		//check IP is valid or not
+		if(lsd._store.get(destinationIP).links.size() == 1 || lsd._store.get(rd.simulatedIPAddress).links.size() == 1){
+			System.out.println("the destinationIP is not in the network!");
+			return;
+		}
 		String path = lsd.getShortestPath(destinationIP);
 		System.out.println(path);
 	}
@@ -61,7 +69,66 @@ public class Router {
 	 * @param portNumber the port number which the link attaches at
 	 */
 	private void processDisconnect(short portNumber) {
+		if(ports[portNumber] == null){
+			System.out.println("ports["+portNumber+"] is null!");
+			return;
+		}
+		//remove link from own links
+		for (LinkDescription ld : lsd._store.get(rd.simulatedIPAddress).links){
+			if(ld.linkID.compareTo(ports[portNumber].router2.simulatedIPAddress)==0){
+				lsd._store.get(rd.simulatedIPAddress).links.remove(ld);
+			}
+		}
+		//remove own link from the target links' database
+		for (LinkDescription ld : lsd._store.get(ports[portNumber].router2.simulatedIPAddress).links){
+			if(ld.linkID.compareTo(rd.simulatedIPAddress)==0){
+				lsd._store.get(ports[portNumber].router2.simulatedIPAddress).links.remove(ld);
+			}
+		}
+		//write new lsa update
+		lsd._store.get(rd.simulatedIPAddress).lsaSeqNumber++;
+		lsd._store.get(ports[portNumber].router2.simulatedIPAddress).lsaSeqNumber++;
+		// Create the vector of LSA to be send in the update packet
+		Vector<LSA> lsaUpdate = new Vector<LSA>();
+		for (Map.Entry<String, LSA> entry : lsd._store.entrySet())
+		{
+			lsaUpdate.add(entry.getValue());
+		}
+		//send to all neighors
 
+		for(int i=0;i<ports.length;i++){
+			if(ports[i]!= null &&ports[i].router2.status==RouterStatus.TWO_WAY){
+				try{
+					//create a new socket for each neighbor
+					Socket target_socket = new Socket(ports[i].router2.processIPAddress,ports[i].router2.processPortNumber);
+					OutputStream outToServer = target_socket.getOutputStream();
+					ObjectOutputStream new_out = new ObjectOutputStream(outToServer);
+					//write the out packet
+					SOSPFPacket LSA_packet = new SOSPFPacket();
+					LSA_packet.srcProcessIP = rd.processIPAddress;
+					LSA_packet.srcProcessPort = rd.processPortNumber;
+					LSA_packet.srcIP = rd.simulatedIPAddress;
+					LSA_packet.dstIP = ports[i].router2.simulatedIPAddress;
+					LSA_packet.sospfType = 1 ;
+					LSA_packet.routerID = rd.simulatedIPAddress;
+
+					LSA_packet.lsaArray = new Vector<LSA>(lsaUpdate);
+
+					new_out.writeObject( LSA_packet);
+					new_out.flush();
+
+					target_socket.close();
+
+				}
+				catch(IOException e) {
+					e.printStackTrace();
+					break;
+				}
+			}
+		}
+
+		//delete target from ports
+		ports[portNumber] = null;
 	}
 
 	/**
@@ -115,7 +182,15 @@ public class Router {
 	 * broadcast Hello to neighbors
 	 */
 	private void processStart() {
-		// Increment LSA sequence number for self every time start() is called
+		//check this router has already started or not
+		if(isStart){
+			System.out.println("This router has already started!");
+			return;
+		}else{
+			isStart = true;
+		}
+
+		// Increment LSA sequence number for self and target
 		lsd._store.get(rd.simulatedIPAddress).lsaSeqNumber++;
 		// Create the vector of LSA to be send in the update packet
 		Vector<LSA> lsaUpdate = new Vector<LSA>();
@@ -227,6 +302,13 @@ public class Router {
 	 */
 	private void processConnect(String processIP, short processPort,
 								String simulatedIP, short weight) {
+
+		//check the router has started or not
+		if(!isStart){
+			System.out.println("This router has not started yet!");
+			return;
+		}
+
 		int portNumber = 0;
 		//attach part
 		boolean duplicate = false;
@@ -268,7 +350,7 @@ public class Router {
 		}
 
 		//start part
-		// Increment LSA sequence number for self every time start() is called
+		// Increment LSA sequence number for self every time connect() is called
 		lsd._store.get(rd.simulatedIPAddress).lsaSeqNumber++;
 		// Create the vector of LSA to be send in the update packet
 		Vector<LSA> lsaUpdate = new Vector<LSA>();
@@ -381,6 +463,14 @@ public class Router {
 	 * disconnect with all neighbors and quit the program
 	 */
 	private void processQuit() {
+		for(int i =0 ;i < 4 ; i++){
+			if(ports[i] != null){
+				processDisconnect((short)i);
+			}
+		}
+
+		isStart = false;
+		System.exit(0);
 
 	}
 

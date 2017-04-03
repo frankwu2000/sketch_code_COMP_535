@@ -1,6 +1,8 @@
 package socs.network.node;
 
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
@@ -119,6 +121,18 @@ public class Server_socket extends Thread {
 					client_socket.close();
 					//broadcast current linkstate database to all neighbors except the sender of the packet
 
+					//when _store.get(IP).links does not have the linkID but ports does , update ports
+					List<String> temp = new ArrayList<String>();
+					for(LinkDescription ld : router.lsd._store.get(router.rd.simulatedIPAddress).links){
+						temp.add(ld.linkID);
+					}
+					for(int p = 0 ; p<router.ports.length;p++){
+						if(router.ports[p]!=null && !temp.contains(router.ports[p].router2.simulatedIPAddress)){
+							router.ports[p] = null;
+						}
+					}
+
+
 
 					//broadcast current linkstate database to all neighbors except the sender of the packet
 					if(Update){
@@ -131,7 +145,7 @@ public class Server_socket extends Thread {
 
 						for(int i=0;i<router.ports.length;i++){
 							if(router.ports[i]!= null &&router.ports[i].router2.status==RouterStatus.TWO_WAY&& !(router.ports[i].router2.simulatedIPAddress.equals(in_packet.srcIP))){
-								System.out.println("Show this if successfully send LSAUpdate to neighbour after receiving LSAupdate!");
+								//		System.out.println("Show this if successfully send LSAUpdate to neighbour after receiving LSAupdate!");
 
 								//create a new socket for each neighbor
 								Socket target_socket = new Socket(router.ports[i].router2.processIPAddress,router.ports[i].router2.processPortNumber);

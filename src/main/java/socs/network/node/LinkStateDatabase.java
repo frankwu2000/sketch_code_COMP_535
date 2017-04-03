@@ -37,6 +37,7 @@ public class LinkStateDatabase {
 	  {
 		  vertices.add(new Vertex(entry.getKey()));
 	  }
+
 	  // Populate the graph with edges, now that the vertices are present
 	  for (Map.Entry<String, LSA> entry : _store.entrySet())
 	  {
