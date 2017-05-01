@@ -36,7 +36,7 @@ public class DijkstraAlgorithm {
 		}
 		solved = new HashSet<Vertex>();
 		processing = new HashSet<Vertex>();
-		predecessors = new IdentityHashMap<Vertex, Vertex>();
+		predecessors = new HashMap<Vertex, Vertex>();
 		distance = new HashMap<Vertex, Integer>();
 		distance.put(source, 0);
 		processing.add(source);
@@ -56,6 +56,8 @@ public class DijkstraAlgorithm {
 		{
 			if (getShortestDistance(v) > getShortestDistance(node) + getDist(node,v))
 			{
+				//2017-04-03 debug
+				distance.put(v, getDist(node,v));
 				predecessors.put(v, node);
 				processing.add(v);
 			}
