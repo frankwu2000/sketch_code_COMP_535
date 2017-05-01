@@ -56,7 +56,10 @@ public class DijkstraAlgorithm {
 		{
 			if (getShortestDistance(v) > getShortestDistance(node) + getDist(node,v))
 			{
+<<<<<<< HEAD
 				//2017-04-03 debug
+=======
+>>>>>>> origin/master
 				distance.put(v, getDist(node,v));
 				predecessors.put(v, node);
 				processing.add(v);
